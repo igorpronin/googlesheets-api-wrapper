@@ -1,0 +1,50 @@
+# Node-specific
+node_modules/
+npm-debug.log
+yarn-error.log
+combined.log
+error.log
+package-lock.json # if you're not intending to share this lockfile
+yarn.lock # similar to above, if you're not sharing it
+
+# Environment variables (Security!)
+.env
+
+# dist
+dist/
+
+# Logs (if you're generating logs)
+logs/
+
+# Editors/IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+*.DS_Store # for Mac users
+
+# OS generated
+Thumbs.db # for Windows users
+.DS_Store # for macOS users
+
+# Test logs
+mocha.opts
+test/*.log
+
+# Temporary files
+tmp/
+*.tmp
+*.tmp.*
+*.bak
+*.bak.*
+
+# Other
+*.log.*
+*.pid
+*.seed
+*.cmd
+*.rts
+*.dat
+*.out
+*.gz

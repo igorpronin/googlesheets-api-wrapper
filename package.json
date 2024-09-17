@@ -1,0 +1,29 @@
+{
+  "name": "@igorpronin/googlesheets-api-wrapper",
+  "version": "0.1.0",
+  "description": "Google sheets api client for internal purposes",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "clear": "rm -rf ./dist",
+    "dev": "nodemon ./src/index.ts",
+    "format": "prettier --write \"./src/**/*.ts\"",
+    "format:tools": "prettier --write \"./tools/*.js\"",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "stats": "./tools/git-daily-stats.sh",
+    "watch": "node ./tools/file-watcher.js",
+    "permit": "chmod +x ./tools/update-version.sh && chmod +x ./tools/git-commit.sh && chmod +x ./tools/release.sh && chmod +x ./tools/build-and-publish.sh && chmod +x ./tools/git-daily-stats.sh",
+    "git": "./tools/git-commit.sh",
+    "release:patch": "npm run clear && ./tools/release.sh patch",
+    "release:minor": "npm run clear && ./tools/release.sh minor"
+  },
+  "keywords": [],
+  "author": "legalsolut@gmail.com",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}

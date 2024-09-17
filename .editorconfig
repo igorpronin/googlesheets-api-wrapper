@@ -1,0 +1,27 @@
+# EditorConfig helps developers define and maintain consistent
+# coding styles between different editors and IDEs
+# editorconfig.org
+
+root = true
+
+[*]
+# Use Unix-style line endings
+end_of_line = lf
+
+# Set default charset
+charset = utf-8
+
+# Trim trailing whitespace
+trim_trailing_whitespace = true
+
+# Ensure files end with a newline
+insert_final_newline = true
+
+[**.{js,ts,tsx}]
+# Use 2 spaces for indentation
+indent_style = space
+indent_size = 2
+
+# Markdown-specific: it's common to have trailing whitespace in markdown for line breaks
+[*.md]
+trim_trailing_whitespace = false
