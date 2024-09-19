@@ -166,7 +166,6 @@ export class GoogleSheetsClient {
         });
 
         const sheetData = response.data.values || [];
-        console.log('sheetData', sheetData);
         
         // Find the last row with any data
         let lastRowIndex = 0;
@@ -178,10 +177,11 @@ export class GoogleSheetsClient {
         }
 
         // Append the new row
-        await sheets.spreadsheets.values.update({
+        await sheets.spreadsheets.values.append({
           spreadsheetId,
           range: `${sheetName}!A${lastRowIndex + 1}`,
           valueInputOption: 'USER_ENTERED',
+          insertDataOption: 'INSERT_ROWS',
           requestBody: { values: [values] },
         });
 
