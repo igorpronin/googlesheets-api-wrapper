@@ -1,14 +1,16 @@
 {
   "name": "@igorpronin/googlesheets-api-wrapper",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Google sheets api client for internal purposes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "commonjs",
   "scripts": {
+    "start": "node --no-deprecation dist/index.js",
     "build": "tsc",
     "clear": "rm -rf ./dist",
     "dev": "nodemon ./src/index.ts",
+    "dev:2": "nodemon ./tmp/abc.ts",
     "format": "prettier --write \"./src/**/*.ts\"",
     "format:tools": "prettier --write \"./tools/*.js\"",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -24,6 +26,19 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/igorpronin/googlesheets-api-wrapper.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "google-auth-library": "^9.14.1",
+    "googleapis": "^144.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.5",
+    "prettier": "^3.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.2"
   }
 }
