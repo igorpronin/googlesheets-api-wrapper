@@ -1,6 +1,6 @@
 {
   "name": "@igorpronin/googlesheets-api-wrapper",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Google sheets api client for internal purposes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
