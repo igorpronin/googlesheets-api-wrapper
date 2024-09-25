@@ -1,6 +1,6 @@
 {
   "name": "@igorpronin/googlesheets-api-wrapper",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Google sheets api client for internal purposes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,7 +10,7 @@
     "build": "tsc",
     "clear": "rm -rf ./dist",
     "dev": "nodemon ./src/index.ts",
-    "dev:2": "nodemon ./tmp/abc.ts",
+    "debug": "nodemon ./tmp/abc.ts",
     "format": "prettier --write \"./src/**/*.ts\"",
     "format:tools": "prettier --write \"./tools/*.js\"",
     "test": "echo \"Error: no test specified\" && exit 1",

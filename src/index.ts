@@ -193,6 +193,25 @@ export class GoogleSheetsClient {
     });
   }
 
+  public fill_cell(spreadsheetId: string, sheetName: string, column: string, row: number, value: any): Promise<void> {
+    return this.enqueue(async () => {
+      try {
+        const cellAddress = `${column}${row}`;
+        const sheets = await this.get_client();
+        await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range: `${sheetName}!${cellAddress}`,
+          valueInputOption: 'USER_ENTERED',
+          requestBody: { values: [[value]] },
+        });
+        console.log(`Cell ${cellAddress} in sheet ${sheetName} updated successfully`);
+      } catch (error) {
+        console.error('Error updating cell:', error);
+        throw error;
+      }
+    });
+  }
+
   private column_to_letter(column: number): string {
     let temp,
       letter = '';
@@ -203,4 +222,6 @@ export class GoogleSheetsClient {
     }
     return letter;
   }
+
+  
 }
