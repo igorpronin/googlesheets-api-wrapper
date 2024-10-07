@@ -8,6 +8,16 @@ Google Sheets API wrapper for internal purposes.
 npm i @igorpronin/googlesheets-api-wrapper
 ```
 
+## Usage
+
+```typescript
+import { GoogleSheetsClient } from '@igorpronin/googlesheets-api-wrapper';
+
+const client = GoogleSheetsClient.get_instance('./path/to/keyfile.json');
+
+client.append_row(spreadsheetId, sheetName, data);
+```
+
 ## API
 
 - `get_instance(keyFilePath: string)`: Returns a singleton instance of the GoogleSheetsClient. Initializes with the path to the Google service account key file.
@@ -21,5 +31,7 @@ npm i @igorpronin/googlesheets-api-wrapper
 - `append_row(spreadsheetId: string, sheetName: string, values: any[])`: Appends a row of data to the first empty row after the last non-empty row in a specified sheet.
 
 - `fill_cell(spreadsheetId: string, sheetName: string, column: string, row: number, value: any)`: Fills a specific cell in a sheet with the provided value.
+
+- `get_row_by_column_value(spreadsheetId: string, sheetName: string, column: string, value: any)`: Returns the row that contains the specified value in the specified column.
 
 All methods return Promises and are queued to avoid rate limiting issues.

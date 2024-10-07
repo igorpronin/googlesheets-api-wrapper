@@ -1,5 +1,6 @@
 import { google, sheets_v4 } from 'googleapis';
-
+import { has_duplicates, to_console } from './helpers';
+import { AxiosError } from 'axios';
 type QueueItem = {
   operation: () => Promise<any>;
   resolve: (value: any) => void;
@@ -148,7 +149,7 @@ export class GoogleSheetsClient {
         const sheetProperties = await sheets.spreadsheets.get({
           spreadsheetId,
           ranges: [sheetName],
-          fields: 'sheets.properties'
+          fields: 'sheets.properties',
         });
 
         const sheetProps = sheetProperties.data.sheets?.[0].properties;
@@ -166,11 +167,11 @@ export class GoogleSheetsClient {
         });
 
         const sheetData = response.data.values || [];
-        
+
         // Find the last row with any data
         let lastRowIndex = 0;
         for (let i = sheetData.length - 1; i >= 0; i--) {
-          if (sheetData[i] && sheetData[i].some(cell => cell !== null && cell !== '')) {
+          if (sheetData[i] && sheetData[i].some((cell) => cell !== null && cell !== '')) {
             lastRowIndex = i + 1;
             break;
           }
@@ -193,7 +194,13 @@ export class GoogleSheetsClient {
     });
   }
 
-  public fill_cell(spreadsheetId: string, sheetName: string, column: string, row: number, value: any): Promise<void> {
+  public fill_cell(
+    spreadsheetId: string,
+    sheetName: string,
+    column: string,
+    row: number,
+    value: any,
+  ): Promise<void> {
     return this.enqueue(async () => {
       try {
         const cellAddress = `${column}${row}`;
@@ -204,9 +211,45 @@ export class GoogleSheetsClient {
           valueInputOption: 'USER_ENTERED',
           requestBody: { values: [[value]] },
         });
-        console.log(`Cell ${cellAddress} in sheet ${sheetName} updated successfully`);
+        to_console(`Cell ${cellAddress} in sheet ${sheetName} updated successfully`);
       } catch (error) {
         console.error('Error updating cell:', error);
+        throw error;
+      }
+    });
+  }
+
+  public get_row_by_column_value(
+    spreadsheetId: string,
+    sheetName: string,
+    column: string,
+    value: any,
+  ): Promise<number | null> {
+    return this.enqueue(async () => {
+      try {
+        const sheets = await this.get_client();
+        const col_val = `${column.toUpperCase()}:${column.toUpperCase()}`;
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: `${sheetName}!${col_val}`,
+        });
+        const rows = response.data.values || [];
+
+        const values = rows.map((row) => row[0]);
+
+        if (has_duplicates(values)) {
+          to_console('❗️ Column has duplicates');
+        }
+
+        const column_index = values.indexOf(value);
+
+        if (column_index === -1) {
+          return null;
+        }
+
+        return column_index + 1; 
+      } catch (error) {
+        console.error('Error getting row by column value:', error);
         throw error;
       }
     });
@@ -223,5 +266,61 @@ export class GoogleSheetsClient {
     return letter;
   }
 
-  
+  public async check_read_write_permissions(spreadsheetId: string): Promise<boolean> {
+    try {
+      const sheets = await this.get_client();
+      
+      // Attempt to get minimal spreadsheet information
+      await sheets.spreadsheets.get({
+        spreadsheetId: spreadsheetId,
+        fields: 'spreadsheetId'
+      });
+
+      // If the above doesn't throw an error, we have at least read access
+      // Now check for write access by attempting to add a developer metadata
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: spreadsheetId,
+        requestBody: {
+          requests: [{
+            createDeveloperMetadata: {
+              developerMetadata: {
+                metadataId: 1,
+                metadataKey: 'test_write_access',
+                metadataValue: 'test',
+                location: { spreadsheet: true },
+                visibility: 'DOCUMENT'
+              }
+            }
+          }]
+        }
+      });
+
+      // If both operations succeed, we have read-write access
+      return true;
+    } catch (error) {
+      console.error('Error checking read-write access');
+      return false;
+    } finally {
+      // Clean up: remove the test metadata
+      try {
+        const sheets = await this.get_client();
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId: spreadsheetId,
+          requestBody: {
+            requests: [{
+              deleteDeveloperMetadata: {
+                dataFilter: {
+                  developerMetadataLookup: {
+                    metadataKey: 'test_write_access'
+                  }
+                }
+              }
+            }]
+          }
+        });
+      } catch (cleanupError) {
+        // Ignore cleanup errors
+      }
+    }
+  }
 }

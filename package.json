@@ -1,6 +1,6 @@
 {
   "name": "@igorpronin/googlesheets-api-wrapper",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Google sheets api client for internal purposes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -32,6 +32,7 @@
     "access": "public"
   },
   "dependencies": {
+    "axios": "^1.7.7",
     "google-auth-library": "^9.14.1",
     "googleapis": "^144.0.0"
   },
