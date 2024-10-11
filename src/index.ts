@@ -1,6 +1,6 @@
 import { google, sheets_v4 } from 'googleapis';
 import { has_duplicates, to_console } from './helpers';
-import { AxiosError } from 'axios';
+
 type QueueItem = {
   operation: () => Promise<any>;
   resolve: (value: any) => void;
@@ -74,8 +74,8 @@ export class GoogleSheetsClient {
     });
   }
 
-  public read_sheet(spreadsheetId: string, range: string): Promise<any[][]> {
-    return this.enqueue(async () => {
+  public read_sheet(spreadsheetId: string, range: string, force?: boolean): Promise<any[][]> {
+    const operation = async () => {
       try {
         const sheets = await this.get_client();
         const response = await sheets.spreadsheets.values.get({
@@ -87,28 +87,52 @@ export class GoogleSheetsClient {
         console.error('Error reading sheet:', error);
         throw error;
       }
-    });
+    };
+
+    if (force) {
+      return operation();
+    } else {
+      return this.enqueue(operation);
+    }
   }
 
-  public write_to_sheet(spreadsheetId: string, range: string, values: any[][]): Promise<void> {
-    return this.enqueue(async () => {
+  public write_to_sheet(
+    spreadsheetId: string,
+    sheetName: string,
+    range: string,
+    values: any[][],
+    force?: boolean,
+  ): Promise<void> {
+    const destination_range = `${sheetName}!${range}`;
+    const operation = async () => {
       try {
         const sheets = await this.get_client();
         await sheets.spreadsheets.values.update({
           spreadsheetId,
-          range,
+          range: destination_range,
           valueInputOption: 'USER_ENTERED',
           requestBody: { values },
         });
+        to_console(`Wrote to ${destination_range}`);
       } catch (error) {
         console.error('Error writing to sheet:', error);
         throw error;
       }
-    });
+    };
+
+    if (force) {
+      return operation();
+    } else {
+      return this.enqueue(operation);
+    }
   }
 
-  public read_entire_sheet(spreadsheetId: string, sheetName: string): Promise<any[][]> {
-    return this.enqueue(async () => {
+  public read_entire_sheet(
+    spreadsheetId: string,
+    sheetName: string,
+    force?: boolean,
+  ): Promise<any[][]> {
+    const operation = async () => {
       try {
         const sheets = await this.get_client();
 
@@ -137,11 +161,22 @@ export class GoogleSheetsClient {
         console.error('Error reading entire sheet:', error);
         throw error;
       }
-    });
+    };
+
+    if (force) {
+      return operation();
+    } else {
+      return this.enqueue(operation);
+    }
   }
 
-  public append_row(spreadsheetId: string, sheetName: string, values: any[]): Promise<void> {
-    return this.enqueue(async () => {
+  public append_row(
+    spreadsheetId: string,
+    sheetName: string,
+    values: any[],
+    force?: boolean,
+  ): Promise<void> {
+    const operation = async () => {
       try {
         const sheets = await this.get_client();
 
@@ -186,12 +221,47 @@ export class GoogleSheetsClient {
           requestBody: { values: [values] },
         });
 
-        console.log(`Appended row at position ${lastRowIndex + 1}`);
+        to_console(`Appended row at position ${lastRowIndex + 1}`);
       } catch (error) {
         console.error('Error appending row:', error);
         throw error;
       }
-    });
+    };
+
+    if (force) {
+      return operation();
+    } else {
+      return this.enqueue(operation);
+    }
+  }
+
+  public get_cell(
+    spreadsheetId: string,
+    sheetName: string,
+    column: string,
+    row: number,
+    force?: boolean,
+  ): Promise<any> {
+    const operation = async (): Promise<any> => {
+      try {
+        const sheets = await this.get_client();
+        const cellAddress = `${column}${row}`;
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: `${sheetName}!${cellAddress}`,
+        });
+        return response.data.values?.[0]?.[0];
+      } catch (error) {
+        console.error('Error getting cell:', error);
+        throw error;
+      }
+    };
+
+    if (force) {
+      return operation();
+    } else {
+      return this.enqueue(operation);
+    }
   }
 
   public fill_cell(
@@ -200,8 +270,9 @@ export class GoogleSheetsClient {
     column: string,
     row: number,
     value: any,
+    force?: boolean,
   ): Promise<void> {
-    return this.enqueue(async () => {
+    const operation = async () => {
       try {
         const cellAddress = `${column}${row}`;
         const sheets = await this.get_client();
@@ -216,7 +287,13 @@ export class GoogleSheetsClient {
         console.error('Error updating cell:', error);
         throw error;
       }
-    });
+    };
+
+    if (force) {
+      return operation();
+    } else {
+      return this.enqueue(operation);
+    }
   }
 
   public get_row_by_column_value(
@@ -224,8 +301,9 @@ export class GoogleSheetsClient {
     sheetName: string,
     column: string,
     value: any,
+    force?: boolean,
   ): Promise<number | null> {
-    return this.enqueue(async () => {
+    const operation = async () => {
       try {
         const sheets = await this.get_client();
         const col_val = `${column.toUpperCase()}:${column.toUpperCase()}`;
@@ -247,12 +325,95 @@ export class GoogleSheetsClient {
           return null;
         }
 
-        return column_index + 1; 
+        return column_index + 1;
       } catch (error) {
         console.error('Error getting row by column value:', error);
         throw error;
       }
-    });
+    };
+
+    if (force) {
+      return operation();
+    } else {
+      return this.enqueue(operation);
+    }
+  }
+
+  public get_rows_map_of_values(
+    spreadsheetId: string,
+    sheetName: string,
+    column: string,
+    values: string[],
+    force?: boolean,
+  ): Promise<{ [key: string]: number | null }> {
+    const operation = async () => {
+      try {
+        const sheets = await this.get_client();
+        const col_val = `${column.toUpperCase()}:${column.toUpperCase()}`;
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: `${sheetName}!${col_val}`,
+        });
+
+        const rows = response.data.values || [];
+        const raw_values = rows.map((row) => row[0]);
+
+        if (has_duplicates(values)) {
+          to_console('❗️ Column has duplicates');
+        }
+
+        const rows_map: { [key: string]: number } = {};
+        values.forEach((value, index) => {
+          rows_map[value] = raw_values.indexOf(value) + 1;
+        });
+
+        return rows_map;
+      } catch (error) {
+        console.error('Error getting rows map of values:', error);
+        throw error;
+      }
+    };
+
+    if (force) {
+      return operation();
+    } else {
+      return this.enqueue(operation);
+    }
+  }
+
+  public get_column_letter_map_of_row(
+    spreadsheetId: string,
+    sheetName: string,
+    row: number,
+    force?: boolean,
+  ): Promise<{ [key: string]: string | null }> {
+    const operation = async () => {
+      try {
+        const sheets = await this.get_client();
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: `${sheetName}!A${row}:Z${row}`,
+        });
+
+        const columns = response.data.values?.[0] || [];
+
+        const column_letter_map: { [key: string]: string | null } = {};
+        columns.forEach((column, index) => {
+          column_letter_map[column] = this.column_to_letter(index + 1);
+        });
+
+        return column_letter_map;
+      } catch (error) {
+        console.error('Error getting column letter map of row:', error);
+        throw error;
+      }
+    };
+
+    if (force) {
+      return operation();
+    } else {
+      return this.enqueue(operation);
+    }
   }
 
   private column_to_letter(column: number): string {
@@ -269,11 +430,11 @@ export class GoogleSheetsClient {
   public async check_read_write_permissions(spreadsheetId: string): Promise<boolean> {
     try {
       const sheets = await this.get_client();
-      
+
       // Attempt to get minimal spreadsheet information
       await sheets.spreadsheets.get({
         spreadsheetId: spreadsheetId,
-        fields: 'spreadsheetId'
+        fields: 'spreadsheetId',
       });
 
       // If the above doesn't throw an error, we have at least read access
@@ -281,18 +442,20 @@ export class GoogleSheetsClient {
       await sheets.spreadsheets.batchUpdate({
         spreadsheetId: spreadsheetId,
         requestBody: {
-          requests: [{
-            createDeveloperMetadata: {
-              developerMetadata: {
-                metadataId: 1,
-                metadataKey: 'test_write_access',
-                metadataValue: 'test',
-                location: { spreadsheet: true },
-                visibility: 'DOCUMENT'
-              }
-            }
-          }]
-        }
+          requests: [
+            {
+              createDeveloperMetadata: {
+                developerMetadata: {
+                  metadataId: 1,
+                  metadataKey: 'test_write_access',
+                  metadataValue: 'test',
+                  location: { spreadsheet: true },
+                  visibility: 'DOCUMENT',
+                },
+              },
+            },
+          ],
+        },
       });
 
       // If both operations succeed, we have read-write access
@@ -307,16 +470,18 @@ export class GoogleSheetsClient {
         await sheets.spreadsheets.batchUpdate({
           spreadsheetId: spreadsheetId,
           requestBody: {
-            requests: [{
-              deleteDeveloperMetadata: {
-                dataFilter: {
-                  developerMetadataLookup: {
-                    metadataKey: 'test_write_access'
-                  }
-                }
-              }
-            }]
-          }
+            requests: [
+              {
+                deleteDeveloperMetadata: {
+                  dataFilter: {
+                    developerMetadataLookup: {
+                      metadataKey: 'test_write_access',
+                    },
+                  },
+                },
+              },
+            ],
+          },
         });
       } catch (cleanupError) {
         // Ignore cleanup errors
