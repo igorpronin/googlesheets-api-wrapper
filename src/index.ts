@@ -416,7 +416,7 @@ export class GoogleSheetsClient {
     }
   }
 
-  private column_to_letter(column: number): string {
+  public column_to_letter(column: number): string {
     let temp,
       letter = '';
     while (column > 0) {
