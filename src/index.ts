@@ -7,6 +7,11 @@ type QueueItem = {
   reject: (reason: any) => void;
 };
 
+type Params = {
+  keyFilePath: string;
+  isSilent?: boolean;
+};
+
 export class GoogleSheetsClient {
   private static instance: GoogleSheetsClient;
   private sheets: sheets_v4.Sheets | null = null;
@@ -15,11 +20,17 @@ export class GoogleSheetsClient {
   private queue: QueueItem[] = [];
   private is_processing = false;
 
-  private constructor(private keyFilePath: string) {}
+  private keyFilePath: string;
+  private is_silent: boolean = false;
 
-  public static get_instance(keyFilePath: string): GoogleSheetsClient {
+  private constructor({ keyFilePath, isSilent }: Params) {
+    this.keyFilePath = keyFilePath;
+    this.is_silent = isSilent || false;
+  }
+
+  public static get_instance({ keyFilePath, isSilent }: Params): GoogleSheetsClient {
     if (!GoogleSheetsClient.instance) {
-      GoogleSheetsClient.instance = new GoogleSheetsClient(keyFilePath);
+      GoogleSheetsClient.instance = new GoogleSheetsClient({ keyFilePath, isSilent });
     }
     return GoogleSheetsClient.instance;
   }
@@ -113,7 +124,7 @@ export class GoogleSheetsClient {
           valueInputOption: 'USER_ENTERED',
           requestBody: { values },
         });
-        to_console(`Wrote to ${destination_range}`);
+        to_console(`Wrote to ${destination_range}`, this.is_silent);
       } catch (error) {
         console.error('Error writing to sheet:', error);
         throw error;
@@ -221,7 +232,7 @@ export class GoogleSheetsClient {
           requestBody: { values: [values] },
         });
 
-        to_console(`Appended row at position ${lastRowIndex + 1}`);
+        to_console(`Appended row at position ${lastRowIndex + 1}`, this.is_silent);
       } catch (error) {
         console.error('Error appending row:', error);
         throw error;
@@ -282,7 +293,7 @@ export class GoogleSheetsClient {
           valueInputOption: 'USER_ENTERED',
           requestBody: { values: [[value]] },
         });
-        to_console(`Cell ${cellAddress} in sheet ${sheetName} updated successfully`);
+        to_console(`Cell ${cellAddress} in sheet ${sheetName} updated successfully`, this.is_silent);
       } catch (error) {
         console.error('Error updating cell:', error);
         throw error;
@@ -315,8 +326,8 @@ export class GoogleSheetsClient {
 
         const values = rows.map((row) => row[0]);
 
-        if (has_duplicates(values)) {
-          to_console('❗️ Column has duplicates');
+        if (has_duplicates(values, this.is_silent)) {
+          to_console('❗️ Column has duplicates', this.is_silent);
         }
 
         const column_index = values.indexOf(value);
@@ -358,8 +369,8 @@ export class GoogleSheetsClient {
         const rows = response.data.values || [];
         const raw_values = rows.map((row) => row[0]);
 
-        if (has_duplicates(values)) {
-          to_console('❗️ Column has duplicates');
+        if (has_duplicates(values, this.is_silent)) {
+          to_console('❗️ Column has duplicates', this.is_silent);
         }
 
         const rows_map: { [key: string]: number } = {};
