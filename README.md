@@ -13,7 +13,7 @@ npm i @igorpronin/googlesheets-api-wrapper
 ```typescript
 import { GoogleSheetsClient } from '@igorpronin/googlesheets-api-wrapper';
 
-const client = GoogleSheetsClient.get_instance('./path/to/keyfile.json');
+const client = GoogleSheetsClient.get_instance({ keyFilePath: './path/to/keyfile.json', isSilent: false });
 
 client.append_row(spreadsheetId, sheetName, data);
 ```
