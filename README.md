@@ -22,11 +22,11 @@ client.append_row(spreadsheetId, sheetName, data);
 
 - `get_instance(keyFilePath: string)`: Returns a singleton instance of the GoogleSheetsClient. Initializes with the path to the Google service account key file.
 
-- `read_sheet(spreadsheetId: string, range: string)`: Reads data from a specified range in a spreadsheet. Returns a 2D array of values.
+- `read_tab(spreadsheetId: string, range: string)`: Reads data from a specified range in a spreadsheet. Returns a 2D array of values.
 
-- `write_to_sheet(spreadsheetId: string, range: string, values: any[][])`: Writes data to a specified range in a spreadsheet.
+- `write_to_tab(spreadsheetId: string, range: string, values: any[][])`: Writes data to a specified range in a spreadsheet.
 
-- `read_entire_sheet(spreadsheetId: string, sheetName: string)`: Reads all data from a specified sheet in a spreadsheet. Returns a 2D array of values.
+- `read_entire_tab(spreadsheetId: string, sheetName: string)`: Reads all data from a specified sheet in a spreadsheet. Returns a 2D array of values.
 
 - `append_row(spreadsheetId: string, sheetName: string, values: any[])`: Appends a row of data to the first empty row after the last non-empty row in a specified sheet.
 
@@ -41,5 +41,7 @@ client.append_row(spreadsheetId, sheetName, data);
 - `get_column_letter_map_of_row(spreadsheetId: string, sheetName: string, row: number)`: Returns a map of column letters to values in a specified row.
 
 - `check_read_write_permissions(spreadsheetId: string)`: Checks if the client has read and write permissions for a specified spreadsheet. Returns a boolean.
+
+- `clear_tab(spreadsheetId: string, tabName: string, from_row: number = 1, force?: boolean)`: Clears a specified tab in a spreadsheet.
 
 All methods return Promises and are queued to avoid rate limiting issues.

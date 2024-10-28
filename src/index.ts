@@ -85,17 +85,17 @@ export class GoogleSheetsClient {
     });
   }
 
-  public read_sheet(spreadsheetId: string, range: string, force?: boolean): Promise<any[][]> {
+  public read_tab(spreadsheetId: string, rangeWithTabName: string, force?: boolean): Promise<any[][]> {
     const operation = async () => {
       try {
         const sheets = await this.get_client();
         const response = await sheets.spreadsheets.values.get({
           spreadsheetId,
-          range,
+          range: rangeWithTabName,
         });
         return response.data.values || [];
       } catch (error) {
-        console.error('Error reading sheet:', error);
+        console.error('Error reading tab:', error);
         throw error;
       }
     };
@@ -107,14 +107,19 @@ export class GoogleSheetsClient {
     }
   }
 
-  public write_to_sheet(
+  public read_sheet(spreadsheetId: string, rangeWithTabName: string, force?: boolean): Promise<any[][]> {
+    to_console('❗️ Method is deprecated due to incorrect naming and will be removed soon, use read_tab instead', false);
+    return this.read_tab(spreadsheetId, rangeWithTabName, force);
+  }
+
+  public write_to_tab(
     spreadsheetId: string,
-    sheetName: string,
+    tabName: string,
     range: string,
     values: any[][],
     force?: boolean,
   ): Promise<void> {
-    const destination_range = `${sheetName}!${range}`;
+    const destination_range = `${tabName}!${range}`;
     const operation = async () => {
       try {
         const sheets = await this.get_client();
@@ -126,7 +131,62 @@ export class GoogleSheetsClient {
         });
         to_console(`Wrote to ${destination_range}`, this.is_silent);
       } catch (error) {
-        console.error('Error writing to sheet:', error);
+        console.error('Error writing to tab:', error);
+        throw error;
+      }
+    };
+
+    if (force) {
+      return operation();
+    } else {
+      return this.enqueue(operation);
+    }
+  }
+
+
+  public write_to_sheet(
+    spreadsheetId: string,
+    tabName: string,
+    range: string,
+    values: any[][],
+    force?: boolean,
+  ): Promise<void> {
+    to_console('❗️ Method is deprecated due to incorrect naming and will be removed soon, use write_to_tab instead', false);
+    return this.write_to_tab(spreadsheetId, tabName, range, values, force);
+  }
+
+  public read_entire_tab(
+    spreadsheetId: string,
+    tabName: string,
+    force?: boolean,
+  ): Promise<any[][]> {
+    const operation = async () => {
+      try {
+        const sheets = await this.get_client();
+
+        const sheetProperties = await sheets.spreadsheets.get({
+          spreadsheetId,
+          ranges: [tabName],
+          fields: 'sheets.properties',
+        });
+
+        const sheetProps = sheetProperties.data.sheets?.[0].properties;
+        if (!sheetProps) {
+          throw new Error(`Tab "${tabName}" not found`);
+        }
+
+        const rowCount = sheetProps.gridProperties?.rowCount || 0;
+        const columnCount = sheetProps.gridProperties?.columnCount || 0;
+
+        const range = `${tabName}!A1:${this.column_to_letter(columnCount)}${rowCount}`;
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range,
+        });
+
+        return response.data.values || [];
+      } catch (error) {
+        console.error('Error reading entire tab:', error);
         throw error;
       }
     };
@@ -140,50 +200,16 @@ export class GoogleSheetsClient {
 
   public read_entire_sheet(
     spreadsheetId: string,
-    sheetName: string,
+    tabName: string,
     force?: boolean,
   ): Promise<any[][]> {
-    const operation = async () => {
-      try {
-        const sheets = await this.get_client();
-
-        const sheetProperties = await sheets.spreadsheets.get({
-          spreadsheetId,
-          ranges: [sheetName],
-          fields: 'sheets.properties',
-        });
-
-        const sheetProps = sheetProperties.data.sheets?.[0].properties;
-        if (!sheetProps) {
-          throw new Error(`Sheet "${sheetName}" not found`);
-        }
-
-        const rowCount = sheetProps.gridProperties?.rowCount || 0;
-        const columnCount = sheetProps.gridProperties?.columnCount || 0;
-
-        const range = `${sheetName}!A1:${this.column_to_letter(columnCount)}${rowCount}`;
-        const response = await sheets.spreadsheets.values.get({
-          spreadsheetId,
-          range,
-        });
-
-        return response.data.values || [];
-      } catch (error) {
-        console.error('Error reading entire sheet:', error);
-        throw error;
-      }
-    };
-
-    if (force) {
-      return operation();
-    } else {
-      return this.enqueue(operation);
-    }
+    to_console('❗️ Method is deprecated due to incorrect naming and will be removed soon, use read_entire_tab instead', false);
+    return this.read_entire_tab(spreadsheetId, tabName, force);
   }
 
   public append_row(
     spreadsheetId: string,
-    sheetName: string,
+    tabName: string,
     values: any[],
     force?: boolean,
   ): Promise<void> {
@@ -194,13 +220,13 @@ export class GoogleSheetsClient {
         // Get the sheet's properties to determine its dimensions
         const sheetProperties = await sheets.spreadsheets.get({
           spreadsheetId,
-          ranges: [sheetName],
+          ranges: [tabName],
           fields: 'sheets.properties',
         });
 
         const sheetProps = sheetProperties.data.sheets?.[0].properties;
         if (!sheetProps) {
-          throw new Error(`Sheet "${sheetName}" not found`);
+          throw new Error(`Tab "${tabName}" not found`);
         }
 
         const rowCount = sheetProps.gridProperties?.rowCount || 0;
@@ -209,15 +235,15 @@ export class GoogleSheetsClient {
         // Read all the data
         const response = await sheets.spreadsheets.values.get({
           spreadsheetId,
-          range: `${sheetName}!A1:${this.column_to_letter(columnCount)}${rowCount}`,
+          range: `${tabName}!A1:${this.column_to_letter(columnCount)}${rowCount}`,
         });
 
-        const sheetData = response.data.values || [];
+        const tabData = response.data.values || [];
 
         // Find the last row with any data
         let lastRowIndex = 0;
-        for (let i = sheetData.length - 1; i >= 0; i--) {
-          if (sheetData[i] && sheetData[i].some((cell) => cell !== null && cell !== '')) {
+        for (let i = tabData.length - 1; i >= 0; i--) {
+          if (tabData[i] && tabData[i].some((cell) => cell !== null && cell !== '')) {
             lastRowIndex = i + 1;
             break;
           }
@@ -226,7 +252,7 @@ export class GoogleSheetsClient {
         // Append the new row
         await sheets.spreadsheets.values.append({
           spreadsheetId,
-          range: `${sheetName}!A${lastRowIndex + 1}`,
+          range: `${tabName}!A${lastRowIndex + 1}`,
           valueInputOption: 'USER_ENTERED',
           insertDataOption: 'INSERT_ROWS',
           requestBody: { values: [values] },
@@ -248,7 +274,7 @@ export class GoogleSheetsClient {
 
   public get_cell(
     spreadsheetId: string,
-    sheetName: string,
+    tabName: string,
     column: string,
     row: number,
     force?: boolean,
@@ -259,7 +285,7 @@ export class GoogleSheetsClient {
         const cellAddress = `${column}${row}`;
         const response = await sheets.spreadsheets.values.get({
           spreadsheetId,
-          range: `${sheetName}!${cellAddress}`,
+          range: `${tabName}!${cellAddress}`,
         });
         return response.data.values?.[0]?.[0];
       } catch (error) {
@@ -277,7 +303,7 @@ export class GoogleSheetsClient {
 
   public fill_cell(
     spreadsheetId: string,
-    sheetName: string,
+    tabName: string,
     column: string,
     row: number,
     value: any,
@@ -289,11 +315,11 @@ export class GoogleSheetsClient {
         const sheets = await this.get_client();
         await sheets.spreadsheets.values.update({
           spreadsheetId,
-          range: `${sheetName}!${cellAddress}`,
+          range: `${tabName}!${cellAddress}`,
           valueInputOption: 'USER_ENTERED',
           requestBody: { values: [[value]] },
         });
-        to_console(`Cell ${cellAddress} in sheet ${sheetName} updated successfully`, this.is_silent);
+        to_console(`Cell ${cellAddress} in tab ${tabName} updated successfully`, this.is_silent);
       } catch (error) {
         console.error('Error updating cell:', error);
         throw error;
@@ -307,9 +333,31 @@ export class GoogleSheetsClient {
     }
   }
 
+  public clear_tab(spreadsheetId: string, tabName: string, from_row: number = 1, force?: boolean): Promise<void> {
+    const operation = async () => {
+      try {
+        const sheets = await this.get_client();
+        await sheets.spreadsheets.values.clear({
+          spreadsheetId,
+          range: `${tabName}!A${from_row}:Z`,
+        });
+        to_console(`Cleared tab ${tabName} from row ${from_row}`, this.is_silent);
+      } catch (error) {
+        console.error('Error clearing tab:', error);
+        throw error;
+      }
+    };
+
+    if (force) {
+      return operation();
+    } else {
+      return this.enqueue(operation);
+    }
+  }
+
   public get_row_by_column_value(
     spreadsheetId: string,
-    sheetName: string,
+    tabName: string,
     column: string,
     value: any,
     force?: boolean,
@@ -320,7 +368,7 @@ export class GoogleSheetsClient {
         const col_val = `${column.toUpperCase()}:${column.toUpperCase()}`;
         const response = await sheets.spreadsheets.values.get({
           spreadsheetId,
-          range: `${sheetName}!${col_val}`,
+          range: `${tabName}!${col_val}`,
         });
         const rows = response.data.values || [];
 
@@ -352,7 +400,7 @@ export class GoogleSheetsClient {
 
   public get_rows_map_of_values(
     spreadsheetId: string,
-    sheetName: string,
+    tabName: string,
     column: string,
     values: string[],
     force?: boolean,
@@ -363,7 +411,7 @@ export class GoogleSheetsClient {
         const col_val = `${column.toUpperCase()}:${column.toUpperCase()}`;
         const response = await sheets.spreadsheets.values.get({
           spreadsheetId,
-          range: `${sheetName}!${col_val}`,
+          range: `${tabName}!${col_val}`,
         });
 
         const rows = response.data.values || [];
@@ -394,7 +442,7 @@ export class GoogleSheetsClient {
 
   public get_column_letter_map_of_row(
     spreadsheetId: string,
-    sheetName: string,
+    tabName: string,
     row: number,
     force?: boolean,
   ): Promise<{ [key: string]: string | null }> {
@@ -403,7 +451,7 @@ export class GoogleSheetsClient {
         const sheets = await this.get_client();
         const response = await sheets.spreadsheets.values.get({
           spreadsheetId,
-          range: `${sheetName}!A${row}:Z${row}`,
+          range: `${tabName}!A${row}:Z${row}`,
         });
 
         const columns = response.data.values?.[0] || [];
@@ -472,7 +520,7 @@ export class GoogleSheetsClient {
       // If both operations succeed, we have read-write access
       return true;
     } catch (error) {
-      console.error('Error checking read-write access');
+      to_console('Error checking read-write access', this.is_silent, true);
       return false;
     } finally {
       // Clean up: remove the test metadata
@@ -496,6 +544,7 @@ export class GoogleSheetsClient {
         });
       } catch (cleanupError) {
         // Ignore cleanup errors
+        to_console('❗️ Error cleaning up test metadata', this.is_silent, true);
       }
     }
   }

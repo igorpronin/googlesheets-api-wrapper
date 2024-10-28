@@ -12,9 +12,13 @@ export const has_duplicates = (arr: any[], isSilent: boolean): boolean => {
   return false;
 };
 
-export const to_console = (msg: string, isSilent: boolean) => {
+export const to_console = (msg: string, isSilent: boolean, isError?: boolean) => {
+  const prefix = '[Google Sheets Lib]';
+  if (isError) {
+    console.error(`${prefix} ${msg}`);
+    return;
+  }
   if (!isSilent) {
-    const prefix = '[Google Sheets Lib]';
     console.log(`${prefix} ${msg}`);
   }
 };
