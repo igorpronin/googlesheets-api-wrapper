@@ -107,6 +107,11 @@ export class GoogleSheetsClient {
     }
   }
 
+  public read_tab_by_name(spreadsheetId: string, tabName: string, range: string, force?: boolean): Promise<any[][]> {
+    const fullRange = `${tabName}!${range}`;
+    return this.read_tab(spreadsheetId, fullRange, force);
+  }
+
   public read_sheet(spreadsheetId: string, rangeWithTabName: string, force?: boolean): Promise<any[][]> {
     to_console('❗️ Method is deprecated due to incorrect naming and will be removed soon, use read_tab instead', false);
     return this.read_tab(spreadsheetId, rangeWithTabName, force);

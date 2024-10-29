@@ -24,6 +24,8 @@ client.append_row(spreadsheetId, sheetName, data);
 
 - `read_tab(spreadsheetId: string, range: string)`: Reads data from a specified range in a spreadsheet. Returns a 2D array of values.
 
+- `read_tab_by_name(spreadsheetId: string, tabName: string, range: string)`: Reads data from a specified range in a spreadsheet. Returns a 2D array of values.
+
 - `write_to_tab(spreadsheetId: string, range: string, values: any[][])`: Writes data to a specified range in a spreadsheet.
 
 - `read_entire_tab(spreadsheetId: string, sheetName: string)`: Reads all data from a specified sheet in a spreadsheet. Returns a 2D array of values.
