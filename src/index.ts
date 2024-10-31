@@ -95,7 +95,8 @@ export class GoogleSheetsClient {
         });
         return response.data.values || [];
       } catch (error) {
-        console.error('Error reading tab:', error);
+        to_console('Error reading tab', this.is_silent, true);
+        console.error(error);
         throw error;
       }
     };
@@ -136,7 +137,8 @@ export class GoogleSheetsClient {
         });
         to_console(`Wrote to ${destination_range}`, this.is_silent);
       } catch (error) {
-        console.error('Error writing to tab:', error);
+        to_console('Error writing to tab', this.is_silent, true);
+        console.error(error);
         throw error;
       }
     };
@@ -191,7 +193,8 @@ export class GoogleSheetsClient {
 
         return response.data.values || [];
       } catch (error) {
-        console.error('Error reading entire tab:', error);
+        to_console('Error reading entire tab', this.is_silent, true);
+        console.error(error);
         throw error;
       }
     };
@@ -265,7 +268,8 @@ export class GoogleSheetsClient {
 
         to_console(`Appended row at position ${lastRowIndex + 1}`, this.is_silent);
       } catch (error) {
-        console.error('Error appending row:', error);
+        to_console('Error appending row', this.is_silent, true);
+        console.error(error);
         throw error;
       }
     };
@@ -294,7 +298,8 @@ export class GoogleSheetsClient {
         });
         return response.data.values?.[0]?.[0];
       } catch (error) {
-        console.error('Error getting cell:', error);
+        to_console('Error getting cell', this.is_silent, true);
+        console.error(error);
         throw error;
       }
     };
@@ -326,7 +331,8 @@ export class GoogleSheetsClient {
         });
         to_console(`Cell ${cellAddress} in tab ${tabName} updated successfully`, this.is_silent);
       } catch (error) {
-        console.error('Error updating cell:', error);
+        to_console('Error updating cell', this.is_silent, true);
+        console.error(error);
         throw error;
       }
     };
@@ -348,7 +354,8 @@ export class GoogleSheetsClient {
         });
         to_console(`Cleared tab ${tabName} from row ${from_row}`, this.is_silent);
       } catch (error) {
-        console.error('Error clearing tab:', error);
+        to_console('Error clearing tab', this.is_silent, true);
+        console.error(error);
         throw error;
       }
     };
@@ -391,7 +398,8 @@ export class GoogleSheetsClient {
 
         return column_index + 1;
       } catch (error) {
-        console.error('Error getting row by column value:', error);
+        to_console('Error getting row by column value', this.is_silent, true);
+        console.error(error);
         throw error;
       }
     };
@@ -433,7 +441,8 @@ export class GoogleSheetsClient {
 
         return rows_map;
       } catch (error) {
-        console.error('Error getting rows map of values:', error);
+        to_console('Error getting rows map of values', this.is_silent, true);
+        console.error(error);
         throw error;
       }
     };
@@ -468,7 +477,8 @@ export class GoogleSheetsClient {
 
         return column_letter_map;
       } catch (error) {
-        console.error('Error getting column letter map of row:', error);
+        to_console('Error getting column letter map of row', this.is_silent, true);
+        console.error(error);
         throw error;
       }
     };
@@ -489,6 +499,40 @@ export class GoogleSheetsClient {
       column = (column - temp - 1) / 26;
     }
     return letter;
+  }
+
+  public async get_filename(spreadsheetId: string): Promise<string> {
+    try {
+      const sheets = await this.get_client();
+      const response = await sheets.spreadsheets.get({
+        spreadsheetId,
+        fields: 'properties.title',
+      });
+      
+      return response.data.properties?.title || '';
+    } catch (error) {
+      to_console('Error getting filename', this.is_silent, true);
+      console.error(error);
+      throw error;
+    }
+  }
+
+  public async check_read_permissions(spreadsheetId: string): Promise<boolean> {
+    try {
+      const sheets = await this.get_client();
+      
+      // Attempt to get minimal spreadsheet information
+      await sheets.spreadsheets.get({
+        spreadsheetId: spreadsheetId,
+        fields: 'spreadsheetId',
+      });
+
+      // If the above doesn't throw an error, we have read access
+      return true;
+    } catch (error) {
+      to_console('Error checking read access', this.is_silent, true);
+      return false;
+    }
   }
 
   public async check_read_write_permissions(spreadsheetId: string): Promise<boolean> {
@@ -549,7 +593,7 @@ export class GoogleSheetsClient {
         });
       } catch (cleanupError) {
         // Ignore cleanup errors
-        to_console('❗️ Error cleaning up test metadata', this.is_silent, true);
+        to_console('Error cleaning up test metadata', this.is_silent, true);
       }
     }
   }

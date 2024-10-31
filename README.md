@@ -42,6 +42,10 @@ client.append_row(spreadsheetId, sheetName, data);
 
 - `get_column_letter_map_of_row(spreadsheetId: string, sheetName: string, row: number)`: Returns a map of column letters to values in a specified row.
 
+- `get_filename(spreadsheetId: string)`: Returns the filename of a specified spreadsheet.
+
+- `check_read_permissions(spreadsheetId: string)`: Checks if the client has read permissions for a specified spreadsheet. Returns a boolean.
+
 - `check_read_write_permissions(spreadsheetId: string)`: Checks if the client has read and write permissions for a specified spreadsheet. Returns a boolean.
 
 - `clear_tab(spreadsheetId: string, tabName: string, from_row: number = 1, force?: boolean)`: Clears a specified tab in a spreadsheet.
