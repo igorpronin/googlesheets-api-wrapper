@@ -30,7 +30,9 @@ client.append_row(spreadsheetId, sheetName, data);
 
 - `read_entire_tab(spreadsheetId: string, sheetName: string)`: Reads all data from a specified sheet in a spreadsheet. Returns a 2D array of values.
 
-- `append_row(spreadsheetId: string, sheetName: string, values: any[])`: Appends a row of data to the first empty row after the last non-empty row in a specified sheet.
+- [deprecated] `append_row(spreadsheetId: string, sheetName: string, values: any[])`: Appends a row of data to the first empty row after the last non-empty row in a specified sheet. Method is deprecated, use `append_row_v2` instead.
+
+- `append_row_v2(spreadsheetId: string, sheetName: string, values: any[])`: Appends a row of data to the first empty row after the last non-empty row in a specified sheet.
 
 - `get_cell(spreadsheetId: string, sheetName: string, column: string, row: number, force?: boolean)`: Reads the value of a specific cell in a sheet. Returns the value of the cell.
 

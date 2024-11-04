@@ -1,5 +1,5 @@
 import { google, sheets_v4 } from 'googleapis';
-import { has_duplicates, to_console } from './helpers';
+import { has_duplicates, to_console, wait } from './helpers';
 
 type QueueItem = {
   operation: () => Promise<any>;
@@ -221,6 +221,8 @@ export class GoogleSheetsClient {
     values: any[],
     force?: boolean,
   ): Promise<void> {
+    to_console('❗️ Method is deprecated, use append_row_v2 instead (it has a retry mechanism and does not uses "force" parameter)', false);
+
     const operation = async () => {
       try {
         const sheets = await this.get_client();
@@ -278,6 +280,88 @@ export class GoogleSheetsClient {
       return operation();
     } else {
       return this.enqueue(operation);
+    }
+  }
+
+  public async append_row_v2({
+    spreadsheetId,
+    tabName,
+    values,
+  }: {
+    spreadsheetId: string;
+    tabName: string;
+    values: any[];
+  }): Promise<void> {
+    let attempt = 0;
+    const max_attempts = 5;
+    const delay = 30000;
+
+    const operation = async () => {
+      try {
+        const sheets = await this.get_client();
+
+        // Get the sheet's properties to determine its dimensions
+        const sheetProperties = await sheets.spreadsheets.get({
+          spreadsheetId,
+          ranges: [tabName],
+          fields: 'sheets.properties',
+        });
+
+        const sheetProps = sheetProperties.data.sheets?.[0].properties;
+        if (!sheetProps) {
+          throw new Error(`Tab "${tabName}" not found`);
+        }
+
+        const rowCount = sheetProps.gridProperties?.rowCount || 0;
+        const columnCount = sheetProps.gridProperties?.columnCount || 0;
+
+        // Read all the data
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: `${tabName}!A1:${this.column_to_letter(columnCount)}${rowCount}`,
+        });
+
+        const tabData = response.data.values || [];
+
+        // Find the last row with any data
+        let lastRowIndex = 0;
+        for (let i = tabData.length - 1; i >= 0; i--) {
+          if (tabData[i] && tabData[i].some((cell) => cell !== null && cell !== '')) {
+            lastRowIndex = i + 1;
+            break;
+          }
+        }
+
+        // Append the new row
+        await sheets.spreadsheets.values.append({
+          spreadsheetId,
+          range: `${tabName}!A${lastRowIndex + 1}`,
+          valueInputOption: 'USER_ENTERED',
+          insertDataOption: 'INSERT_ROWS',
+          requestBody: { values: [values] },
+        });
+
+        to_console(`Appended row at position ${lastRowIndex + 1}`, this.is_silent);
+      } catch (error) {
+        to_console('Error appending row', this.is_silent, true);
+        console.error(error);
+        throw error;
+      }
+    };
+
+    for (attempt = 0; attempt < max_attempts; attempt++) {
+      try {
+        await operation();
+        break;
+      } catch (error) {
+        to_console(`Error appending row, attempt ${attempt + 1} of ${max_attempts}`, this.is_silent, true);
+        if (attempt === max_attempts - 1) {
+          to_console('Error appending row', this.is_silent, true);
+          console.error(error);
+          throw error;
+        }
+        await wait(delay);
+      }
     }
   }
 

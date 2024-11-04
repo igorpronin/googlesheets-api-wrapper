@@ -22,3 +22,5 @@ export const to_console = (msg: string, isSilent: boolean, isError?: boolean) =>
     console.log(`${prefix} ${msg}`);
   }
 };
+
+export const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
