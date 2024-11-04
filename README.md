@@ -15,7 +15,7 @@ import { GoogleSheetsClient } from '@igorpronin/googlesheets-api-wrapper';
 
 const client = GoogleSheetsClient.get_instance({ keyFilePath: './path/to/keyfile.json', isSilent: false });
 
-client.append_row(spreadsheetId, sheetName, data);
+client.append_row_v2({spreadsheetId, sheetName, data});
 ```
 
 ## API
