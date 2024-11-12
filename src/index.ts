@@ -117,7 +117,7 @@ export class GoogleSheetsClient {
   }
 
   public read_sheet(spreadsheetId: string, rangeWithTabName: string, force?: boolean): Promise<any[][]> {
-    to_console('❗️ Method is deprecated due to incorrect naming and will be removed soon, use read_tab instead', false);
+    to_console('❗️ Method "read_sheet" is deprecated due to incorrect naming and will be removed soon, use "read_tab" instead', false, true);
     return this.read_tab(spreadsheetId, rangeWithTabName, force);
   }
 
@@ -161,7 +161,7 @@ export class GoogleSheetsClient {
     values: any[][],
     force?: boolean,
   ): Promise<void> {
-    to_console('❗️ Method is deprecated due to incorrect naming and will be removed soon, use write_to_tab instead', false);
+    to_console('❗️ Method "write_to_sheet" is deprecated due to incorrect naming and will be removed soon, use "write_to_tab" instead', false, true);
     return this.write_to_tab(spreadsheetId, tabName, range, values, force);
   }
 
@@ -214,7 +214,7 @@ export class GoogleSheetsClient {
     tabName: string,
     force?: boolean,
   ): Promise<any[][]> {
-    to_console('❗️ Method is deprecated due to incorrect naming and will be removed soon, use read_entire_tab instead', false);
+    to_console('❗️ Method "read_entire_sheet" is deprecated due to incorrect naming and will be removed soon, use "read_entire_tab" instead', false, true);
     return this.read_entire_tab(spreadsheetId, tabName, force);
   }
 
@@ -224,7 +224,7 @@ export class GoogleSheetsClient {
     values: any[],
     force?: boolean,
   ): Promise<void> {
-    to_console('❗️ Method is deprecated, use append_row_v2 instead (it has a retry mechanism and does not uses "force" parameter)', false);
+    to_console('❗️ Method "append_row" is deprecated, use "append_row_v2" instead (it has a retry mechanism and does not uses "force" parameter)', false, true);
 
     const operation = async () => {
       try {
