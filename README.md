@@ -36,7 +36,9 @@ client.append_row_v2({spreadsheetId, sheetName, data});
 
 - `get_cell(spreadsheetId: string, sheetName: string, column: string, row: number, force?: boolean)`: Reads the value of a specific cell in a sheet. Returns the value of the cell.
 
-- `fill_cell(spreadsheetId: string, sheetName: string, column: string, row: number, value: any)`: Fills a specific cell in a sheet with the provided value.
+- [deprecated] `fill_cell(spreadsheetId: string, sheetName: string, column: string, row: number, value: any)`: Fills a specific cell in a sheet with the provided value. Method is deprecated, use `fill_cell_v2` instead.
+
+- `fill_cell_v2({spreadsheetId: string, sheetName: string, column: string, row: number, value: any})`: Fills a specific cell in a sheet with the provided value.
 
 - `get_row_by_column_value(spreadsheetId: string, sheetName: string, column: string, value: any)`: Returns the row that contains the specified value in the specified column.
 
