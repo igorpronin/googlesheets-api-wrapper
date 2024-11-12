@@ -46,6 +46,8 @@ client.append_row_v2({spreadsheetId, sheetName, data});
 
 - `get_filename(spreadsheetId: string)`: Returns the filename of a specified spreadsheet.
 
+- `change_filename(spreadsheetId: string, new_name: string)`: Changes the name of a specified sheet in a spreadsheet.
+
 - `check_read_permissions(spreadsheetId: string)`: Checks if the client has read permissions for a specified spreadsheet. Returns a boolean.
 
 - `check_read_write_permissions(spreadsheetId: string)`: Checks if the client has read and write permissions for a specified spreadsheet. Returns a boolean.

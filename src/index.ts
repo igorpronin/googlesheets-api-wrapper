@@ -28,6 +28,9 @@ export class GoogleSheetsClient {
     this.is_silent = isSilent || false;
   }
 
+  private readonly MAX_RETRIES = 5;
+  private readonly RETRY_DELAY = 30000;
+
   public static get_instance({ keyFilePath, isSilent }: Params): GoogleSheetsClient {
     if (!GoogleSheetsClient.instance) {
       GoogleSheetsClient.instance = new GoogleSheetsClient({ keyFilePath, isSilent });
@@ -291,10 +294,8 @@ export class GoogleSheetsClient {
     spreadsheetId: string;
     tabName: string;
     values: any[];
-  }): Promise<void> {
+  }): Promise<boolean> {
     let attempt = 0;
-    const max_attempts = 5;
-    const delay = 30000;
 
     const operation = async () => {
       try {
@@ -343,26 +344,25 @@ export class GoogleSheetsClient {
 
         to_console(`Appended row at position ${lastRowIndex + 1}`, this.is_silent);
       } catch (error) {
-        to_console('Error appending row', this.is_silent, true);
-        console.error(error);
         throw error;
       }
     };
 
-    for (attempt = 0; attempt < max_attempts; attempt++) {
+    for (attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
       try {
         await operation();
         break;
       } catch (error) {
-        to_console(`Error appending row, attempt ${attempt + 1} of ${max_attempts}`, this.is_silent, true);
-        if (attempt === max_attempts - 1) {
+        to_console(`Error appending row, attempt ${attempt + 1} of ${this.MAX_RETRIES}`, this.is_silent, true);
+        console.error(error);
+        if (attempt === this.MAX_RETRIES - 1) {
           to_console('Error appending row', this.is_silent, true);
-          console.error(error);
           throw error;
         }
-        await wait(delay);
+        await wait(this.RETRY_DELAY);
       }
     }
+    return true;
   }
 
   public get_cell(
@@ -599,6 +599,54 @@ export class GoogleSheetsClient {
       console.error(error);
       throw error;
     }
+  }
+
+  public async change_filename({
+    spreadsheetId,
+    new_name
+  }: {
+    spreadsheetId: string;
+    new_name: string;
+  }): Promise<boolean> {
+    let attempt = 0;
+
+    const operation = async () => {
+      try {
+        const sheets = await this.get_client();
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          requestBody: {
+            requests: [{
+              updateSpreadsheetProperties: {
+                properties: {
+                  title: new_name
+                },
+                fields: 'title'
+              }
+            }]
+          }
+        });
+        to_console(`Sheet name changed to "${new_name}"`, this.is_silent);
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    for (attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
+      try {
+        await operation();
+        break;
+      } catch (error) {
+        to_console(`Error changing sheet name, attempt ${attempt + 1} of ${this.MAX_RETRIES}`, this.is_silent, true);
+        console.error(error);
+        if (attempt === this.MAX_RETRIES - 1) {
+          to_console('Error changing sheet name', this.is_silent, true);
+          throw error;
+        }
+        await wait(this.RETRY_DELAY);
+      }
+    }
+    return true;
   }
 
   public async check_read_permissions(spreadsheetId: string): Promise<boolean> {
