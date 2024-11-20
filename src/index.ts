@@ -141,36 +141,40 @@ export class GoogleSheetsClient {
     return this.read_tab(spreadsheetId, rangeWithTabName, force);
   }
 
-  public write_to_tab(
+  public async write_to_tab(
     spreadsheetId: string,
     tabName: string,
     range: string,
     values: any[][],
     force?: boolean,
-  ): Promise<void> {
+  ): Promise<boolean> {
+    if (force) {
+      to_console(
+        '❗️ Method "write_to_tab" does not support "force" parameter anymore, remove it for code purity',
+        false,
+        true,
+      );
+    }
     const destination_range = `${tabName}!${range}`;
     const operation = async () => {
-      try {
-        const sheets = await this.get_client();
-        await sheets.spreadsheets.values.update({
-          spreadsheetId,
-          range: destination_range,
-          valueInputOption: 'USER_ENTERED',
-          requestBody: { values },
-        });
-        to_console(`Wrote to ${destination_range}`, this.is_silent);
-      } catch (error) {
-        to_console('Error writing to tab', this.is_silent, true);
-        console.error(error);
-        throw error;
-      }
+      const sheets = await this.get_client();
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: destination_range,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values },
+      });
+      to_console(`Wrote to ${destination_range}`, this.is_silent);
+      return true;
     };
 
-    if (force) {
-      return operation();
-    } else {
-      return this.enqueue(operation);
+    let attempt = 0;
+    for (attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
+      if (await this.process_cycle(operation, attempt, 'Error writing to tab')) {
+        break;
+      }
     }
+    return true;
   }
 
   public write_to_sheet(
@@ -179,7 +183,7 @@ export class GoogleSheetsClient {
     range: string,
     values: any[][],
     force?: boolean,
-  ): Promise<void> {
+  ): Promise<boolean> {
     to_console(
       '❗️ Method "write_to_sheet" is deprecated due to incorrect naming and will be removed soon, use "write_to_tab" instead',
       false,
