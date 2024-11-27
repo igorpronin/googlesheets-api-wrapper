@@ -91,31 +91,37 @@ export class GoogleSheetsClient {
     });
   }
 
-  public read_tab(
+  public async read_tab(
     spreadsheetId: string,
     rangeWithTabName: string,
     force?: boolean,
   ): Promise<any[][]> {
+    if (force) {
+      to_console(
+        '❗️ Method "read_tab" does not support "force" parameter anymore, remove it for code purity',
+        false,
+        true,
+      );
+    }
+
     const operation = async () => {
-      try {
-        const sheets = await this.get_client();
-        const response = await sheets.spreadsheets.values.get({
-          spreadsheetId,
-          range: rangeWithTabName,
-        });
-        return response.data.values || [];
-      } catch (error) {
-        to_console('Error reading tab', this.is_silent, true);
-        console.error(error);
-        throw error;
-      }
+      const sheets = await this.get_client();
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: rangeWithTabName,
+      });
+      return response.data.values || [];
     };
 
-    if (force) {
-      return operation();
-    } else {
-      return this.enqueue(operation);
+    let attempt = 0;
+    let result: any;
+    for (attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
+      result = await this.process_cycle(operation, attempt, 'Error reading entire tab');
+      if (result) {
+        break;
+      }
     }
+    return result;
   }
 
   public read_tab_by_name(
@@ -701,6 +707,42 @@ export class GoogleSheetsClient {
     } catch (error) {
       to_console('Error getting filename', this.is_silent, true);
       console.error(error);
+      throw error;
+    }
+  }
+
+  public async get_tab_properties(spreadsheetId: string, tabName: string): Promise<{
+    sheetId: number;
+    title: string;
+    index: number;
+    rowCount: number;
+    columnCount: number;
+    hidden?: boolean;
+  } | null> {
+    try {
+      const sheets = await this.get_client();
+      const response = await sheets.spreadsheets.get({
+        spreadsheetId,
+        ranges: [tabName],
+        fields: 'sheets.properties(sheetId,title,index,hidden,gridProperties)',
+      });
+  
+      const sheetProps = response.data.sheets?.[0]?.properties;
+      if (!sheetProps) {
+        console.error(`Tab "${tabName}" not found`);
+        return null;
+      }
+  
+      return {
+        sheetId: sheetProps.sheetId as number,
+        title: sheetProps.title as string,
+        index: sheetProps.index as number,
+        rowCount: sheetProps.gridProperties?.rowCount || 0,
+        columnCount: sheetProps.gridProperties?.columnCount || 0,
+        hidden: sheetProps.hidden as boolean | undefined,
+      };
+    } catch (error) {
+      console.error('Error getting tab properties:', error);
       throw error;
     }
   }

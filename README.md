@@ -56,4 +56,6 @@ client.append_row_v2({spreadsheetId, sheetName, data});
 
 - `clear_tab(spreadsheetId: string, tabName: string, from_row: number = 1, force?: boolean)`: Clears a specified tab in a spreadsheet.
 
+- `get_tab_properties(spreadsheetId: string, tabName: string)`: Returns the properties of a specified tab in a spreadsheet.
+
 All methods return Promises and are queued to avoid rate limiting issues.
